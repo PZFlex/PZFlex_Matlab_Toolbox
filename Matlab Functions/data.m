@@ -5,7 +5,6 @@ function data(SCOM, varargin)
 %
 %   SCOM
 %   form - option format (idtag)
-%   hist - dataname nvalues filename
 %   out  - dataname
 %   polr - real imag option amp phase
 %
@@ -38,7 +37,6 @@ end
 
 % Determine which SCOM selected
 form = strcmp (SCOM, 'form');
-hist = strcmp (SCOM, 'hist');
 out = strcmp (SCOM, 'out');
 polr = strcmp (SCOM, 'polr');
 
@@ -50,10 +48,6 @@ if form == 1
     if nargin == 4
         fprintf(FID, '\tform %s %s %s\n', varargin{1}, varargin{2}, varargin{3});
     end
-end
-
-if hist == 1
-    fprintf(FID, '\thist %s %s %s\n', varargin{1}, varargin{2}, varargin{3});
 end
 
 if out == 1

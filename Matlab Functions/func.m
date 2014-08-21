@@ -4,7 +4,6 @@ function func(SCOM, varargin)
 %%%%%%%%%%%% Input parameters %%%%%%%%%%%%
 %
 %   SCOM
-%   hist - histname
 %   sine - frequency amplitude (phaseshift) (nperiod) (valuadd)
 %   step - amplitude2 steptime amplitude1
 %   wvlt - frequency amplitude
@@ -15,16 +14,11 @@ function func(SCOM, varargin)
 FID = fopen('pzflex.flxinp','a');
 
 % Determine which SCOM selected
-hist = strcmp (SCOM, 'hist');
 sine = strcmp (SCOM, 'sine');
 step = strcmp (SCOM, 'step');
 wvlt = strcmp (SCOM, 'wvlt');
 
 % Apply selected SCOM to flex file
-if hist == 1;
-    fprintf(FID, 'func hist %s\n', varargin{1});
-end
-
 if sine == 1;
     if nargin == 3
         fprintf(FID,'func sine %f %f\n', varargin{1}, varargin{2});
