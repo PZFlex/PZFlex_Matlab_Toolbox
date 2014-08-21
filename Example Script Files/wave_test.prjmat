@@ -1,0 +1,60 @@
+c -------------------------------------------------------------- 
+c                   Project Material List
+c -------------------------------------------------------------- 
+
+
+c -------------------------------------------------------------------------
+c Global variables used in all the material definitions
+c -------------------------------------------------------------------------
+c
+symb epvacm = 8.854e-12               /* dielectric constant for vacumn
+symb freqdamp = 1.e6 if noexist       /* specified frequency for damping model
+symb rmu0 = 1.2566e-6
+
+symb #msg 5
+********************************************************
+Damping matched at $freqdamp Hz
+Redefine variable 'freqdamp' if device centre frequency
+varies significantly from this value
+********************************************************
+
+
+c
+c -------------------------------------------------------------------------
+c    Now define the axis transformation - only posx used in this file
+c -------------------------------------------------------------------------
+
+axis
+     form vctr
+     defn posx car2 0. 0. 0.    1.  0.  0.   0. 1. 0.
+     defn negx car2 0. 0. 0.   -1.  0.  0.   0. 1. 0.
+     defn posy car2 0. 0. 0.    0.  1.  0.   0. 0. 1.
+     defn negy car2 0. 0. 0.    0. -1.  0.   0. 0. 1.
+     defn posz car2 0. 0. 0.    0.  0.  1.   1. 0. 0.
+     defn negz car2 0. 0. 0.    0.  0. -1.   1. 0. 0.
+     end
+
+c -------------------------------------------------------------------------
+c    Input material properties to program
+c -------------------------------------------------------------------------
+
+matr
+c -------------------------------------------------------------- 
+c type : FLUID : 
+c name : watr : 
+c desc : Water at 25C : 
+c -------------------------------------------------------------- 
+
+
+   wvsp on 
+   type elas 
+   prop watr 1000 1496 0
+   vdmp watr $freqdamp db 0.002 0 1e+06 2 0.01 0
+   thrm watr 2060 0.61 0.61 0.61 1.0 0 0 27
+   symb eps = 3
+   symb aeps = $epvacm * $eps
+   elec watr $aeps 
+
+
+   elec void $epvacm
+   end

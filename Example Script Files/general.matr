@@ -1,0 +1,2357 @@
+c
+c General material properties file for finite element modelling
+c
+c Provided by Weidlinger Associates for PZFlex customers
+c
+c Properties for a variety of piezoelectrics, solids and liquids
+c
+c No guarantee is made about the accuracy of the properties for individual applications
+c
+c These are intended only as a 'starting point' 
+c
+c There is no substitute for characterisation of each material to be used, see
+c 'Incremental 'Model-Build-Test' Validation Exercise for a 1-D Biomedical Ultrasonic Imaging Array' 
+c by Powell, Wojcik, DeSilets, Gururaja, Guggenberger, Sherrit Mukherjee in the 1997 UFFC Symposium,
+c available at http://www.wai.com/AppliedScience/Software/Pzflex/Papers/pzflexieee972.pdf
+c
+c Software such as PRAP ( http://www.tasitechnical.com/prap20.html ) can assist with piezoceramic measurements
+c
+c Other sites have provided some of the data used here including
+c Centre for Ultrasonic Engineering at the University of Strathclyde www.cue.ac.uk
+c Onda Corporation for their publication of Alan Selfridge's heavily referenced data www.ondacorp.com
+c Ferroperm's own materials database www.ferroperm-piezo.com
+c 
+c Matweb http://www.matweb.com is a useful source of information
+c
+c
+c For Piezoceramics, Navy type reference numbers are
+c
+c  Type I    PZT4
+c  Type II   PZT5A
+c  Type III  PZT8
+c  Type VI   PZT5H   
+c
+c Navy Type IV (BT) and Type V (5J) are not provided
+c
+c All materials are poled in the positive x direction - users should alter poling appropriately for their 
+c individual needs. Co-ordinate systems for positive and negative poling in the x,y, and z directions
+c are provided.
+c
+c Thermal expansion coefficients, when provided, are typically for room temperature (25C)
+c
+c Example of calculation of Bulk and Shear Moduli, or Longitudinal and Shear Velocity for linear isotropic
+c materials from Young's modulus, Poisson's ratio, and density.
+c
+c     symb prsh = 0.3                                                      /* Poisson's ratio
+c     symb ymsh = 21.e9                                                    /* Young's modulus
+c     symb sdens = 1880.                                                   /* Density
+c     symb sbulk = $ymsh / ( 3. * ( 1 - ( 2. * $prsh ) ) )                 /* Bulk modulus
+c     symb ssher = $ymsh / ( 2. * ( 1 + $prsh ) )                          /* Shear modulus
+c     symb vl = ( ( $sbulk + ( 4. * $ssher / 3. ) ) / $sdens ) ** 0.5      /* Longitudinal velocity
+c     symb vs = ( $ssher / $sdens ) ** 0.5                                 /* Shear velocity
+c
+c When not otherwise specified, value of c66 can be calculated as follows: 'symb bc66 = 0.5 * ( $bc11 - $bc12 )'  
+c
+c This file is structured to simplify proportional changes to the material properties
+c   by simply changing the following scale factors:-
+c             pizcal, stfscal, epsscal & freqdamp
+c 
+c 'freqdamp' is set to 1 MHz unless otherwise specified.
+c
+c By default mechanical stiffness (c) is used rather than compliance (s)
+c By default piezoelectric stress (e) is used rather than piezoelectric strain (d)
+c By default constant stress permittivity (epsilon(T)) is used rather than constant strain (epsilon(S))
+c
+c PZFlex manual details selection of alternate options under MATR PROP, PIEZ, and ELEC.
+c
+c PZFlex automatically calculates other matrices. Full properties are listed in the Flex Print file (flxprt)
+c after materials file is read in.
+c
+c Note that before the process step, plotting of structure will result in materials legend bar containing ALL 
+c materials available. This can run to a considerable number in any given file, making the legend difficult to
+c read. Following the issue of the PRCS command, the material legend will then only show materials actually
+c used in the model.
+c
+c Note:- the values for pizscal, stfscal, epsscal and freqdamp 
+c   may be set in the individual model input file.  If they are not set, then
+c   the default parameters below are used.
+c
+c Note:- all coefficients above have been labeled as per Auld.  However, for 2-D
+c   calculations, Aulds selection of z as the poled axis is inconsistent with
+c   the FLEX assumption that 1-D models have x variation, 2-D models have x and y
+c   variation, etc.
+c
+c   To account for this inconsistency, the following approach is used.  The parameters
+c   are defined in a local coordinate system where local z is the poled direction.
+c   Then the local system is defined relative to the global system using the axis command
+c   group.  Finally, the name of the local system is attached to the material with the
+c   matr axis subcommand to allow the material constants to be automatically transformed
+c   into the model's global coordinate system.  In the following case, the material will
+c   be poled in the global +x direction.
+c
+c   Define the local axis system, named polz, for the material properties. The subsequent
+c   axis commands define an axis named 'posx' with local x' axis to be global +y, local y'
+c   to be global +z, and local z' to be global +x.  Another axis named 'negx' is defined
+c   with local x' axis to be global +y, local y' to be global -z, and local z' to be
+c   global -x.
+c
+c -------------------------------------------------------------------------
+c Global variables used in all the material definitions
+c -------------------------------------------------------------------------
+c
+symb epvacm = 8.854e-12               /* dielectric constant for vacumn
+symb freqdamp = 1.e6 if noexist       /* specified frequency for damping model
+symb rmu0 = 1.2566e-6
+symb #msg 5
+********************************************************
+Damping matched at $freqdamp Hz
+Redefine variable 'freqdamp' if device centre frequency
+varies significantly from this value
+********************************************************
+
+c
+symb pizscal = 1.0 if noexist         /* scale factor for coupling coefficients
+symb stfscal = 1.0 if noexist         /* scale factor for stiffness coefficients
+symb epsscal = 1.0 if noexist         /* scale factor for dielectric coefficients
+c
+c
+c -------------------------------------------------------------------------
+c    Now define the axis transformation - only posx used in this file
+c -------------------------------------------------------------------------
+c    
+axis
+     defn posx car2 0. 0. 0.    1.  0.  0.   0. 1. 0. 
+     defn negx car2 0. 0. 0.   -1.  0.  0.   0. 1. 0.
+     defn posy car2 0. 0. 0.    0.  1.  0.   0. 0. 1.
+     defn negy car2 0. 0. 0.    0. -1.  0.   0. 0. 1.
+     defn posz car2 0. 0. 0.    0.  0.  1.   1. 0. 0.
+     defn negz car2 0. 0. 0.    0.  0. -1.   1. 0. 0.
+     end
+c
+c -------------------------------------------------------------------------
+c    Input material properties to program 
+c -------------------------------------------------------------------------
+c
+matr 
+c
+c -------------------------------------------------------------------------
+c    define material properties in local system
+c -------------------------------------------------------------------------
+c
+c -------------------------------------------------------------------------
+c    pmt3: 3203HD - from D.Powell 
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxx = 1305.8                   /* dielectric constant (constant strain)
+symb bepzz = 1200.2                   /* dielectric constant (constant strain)
+symb brho  = 7820.                    /* density
+symb bqdmp = 90.                      /* Mechanical Q at 1e6
+c
+c    define baseline stiffness coefficients
+c
+symb bc11 = 1.3745e11                 /* stiffness constant  
+symb bc33 = 1.2574e11                 /* stiffness constant
+symb bc44 = 2.2279e10                 /* stiffness constant
+symb bc12 = 0.8790e11                 /* stiffness constant
+symb bc13 = 0.9230e11                 /* stiffness constant
+symb bc66 = 2.4779e10 
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5 =  16.054                   /* coupling constant
+symb bez1 = -9.440                   /* coupling constant
+symb bez3 =  22.495                   /* coupling constant
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+c
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop pmt3 $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec pmt3 $epxx $epxx $epzz
+c
+     piez pmt3 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp pmt3 $freqdamp q  $qdmp  $qdmp 1000000. 1. 
+c
+     axis pmt3 posy   /* relate materials local system to global system
+c
+c
+c -------------------------------------------------------------------------
+c    fpz21 : Ferroperm PZ21  www.ferroperm-piezo.com  equiv. motorola 3203HD
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxx = 2120.                   /* dielectric constant (constant strain)
+symb bepzz = 1980.                   /* dielectric constant (constant strain)
+symb brho  = 7780.                    /* density
+symb bqdmp = 65.                      /* Mechanical Q at 1e6
+c
+c    define baseline stiffness coefficients
+c
+symb bc11 = 1.14e11                 /* stiffness constant  
+symb bc33 = 1.11e11                 /* stiffness constant
+symb bc44 = 2.63e10                 /* stiffness constant
+symb bc12 = 0.757e11                 /* stiffness constant
+symb bc13 = 0.724e11                 /* stiffness constant
+symb bc66 = 1.92e10 
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5 =  16.19                   /* coupling constant
+symb bez1 = -2.92                   /* coupling constant
+symb bez3 =  23.4                   /* coupling constant
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+c
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop fpz21 $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec fpz21 $epxx $epxx $epzz
+c
+     piez fpz21 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp fpz21 $freqdamp q  $qdmp  $qdmp 1000000. 1. 
+c
+     axis fpz21 posx   /* relate materials local system to global system
+c
+c
+c -------------------------------------------------------------------------
+c    fpz26 : Ferroperm PZ26  www.ferroperm-piezo.com  equiv. Navy Type I , PZT4
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxx = 828.                   /* dielectric constant (constant strain)
+symb bepzz = 700.                   /* dielectric constant (constant strain)
+symb brho  = 7700.                    /* density
+symb bqdmp = 776.                      /* Mechanical Q at 1e6
+c
+c    define baseline stiffness coefficients
+c
+symb bc11 = 1.68e11                 /* stiffness constant  
+symb bc33 = 1.23e11                 /* stiffness constant
+symb bc44 = 3.01e10                 /* stiffness constant
+symb bc12 = 1.10e11                 /* stiffness constant
+symb bc13 = 0.999e11                 /* stiffness constant
+symb bc66 = 2.88e10 
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5 =  9.86                   /* coupling constant
+symb bez1 = -2.80                   /* coupling constant
+symb bez3 =  14.7                   /* coupling constant
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+c
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop fpz26 $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec fpz26 $epxx $epxx $epzz
+c
+     piez fpz26 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp fpz26 $freqdamp q  $qdmp  $qdmp 1000000. 1. 
+c
+     axis fpz26 posx   /* relate materials local system to global system
+c
+c
+c -------------------------------------------------------------------------
+c    fpz29 : Ferroperm PZ29  www.ferroperm-piezo.com  equiv. Navy Type VI , PZT5H
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxx = 1340.                   /* dielectric constant (constant strain)
+symb bepzz = 1220.                   /* dielectric constant (constant strain)
+symb brho  = 7460.                    /* density
+symb bqdmp = 76.                      /* Mechanical Q at 1e6
+c
+c    define baseline stiffness coefficients
+c
+symb bc11 = 1.34e11                 /* stiffness constant  
+symb bc33 = 1.09e11                 /* stiffness constant
+symb bc44 = 1.85e10                 /* stiffness constant
+symb bc12 = 0.897e11                 /* stiffness constant
+symb bc13 = 0.857e11                 /* stiffness constant
+ 
+symb bc66 = 2.20e10 
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5 =  13.4                   /* coupling constant
+symb bez1 = -5.06                   /* coupling constant
+symb bez3 =  21.2                   /* coupling constant
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+c
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop fpz29 $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec fpz29 $epxx $epxx $epzz
+c
+     piez fpz29 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp fpz29 $freqdamp q  $qdmp  $qdmp 1000000. 1. 
+c
+     axis fpz29 posx   /* relate materials local system to global system
+c
+c
+c -------------------------------------------------------------------------
+c    fpz28 : Ferroperm PZ28  www.ferroperm-piezo.com  equiv. Navy Type III , PZT8
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxx = 734.                   /* dielectric constant (constant strain)
+symb bepzz = 510.                   /* dielectric constant (constant strain)
+symb brho  = 7700.                    /* density
+symb bqdmp = 971.                      /* Mechanical Q at 1e6
+c
+c    define baseline stiffness coefficients
+c
+symb bc11 = 1.52e11                 /* stiffness constant  
+symb bc33 = 1.18e11                 /* stiffness constant
+symb bc44 = 2.65e10                 /* stiffness constant
+symb bc12 = 0.905e11                 /* stiffness constant
+symb bc13 = 0.874e11                 /* stiffness constant
+symb bc66 = 3.07e10 
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5 =  10.67                   /* coupling constant
+symb bez1 = -3.60                   /* coupling constant
+symb bez3 =  12.4                   /* coupling constant
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+c
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop fpz28 $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec fpz28 $epxx $epxx $epzz
+c
+     piez fpz28 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp fpz28 $freqdamp q  $qdmp  $qdmp 1000000. 1. 
+c
+     axis fpz28 posx   /* relate materials local system to global system
+c
+c
+c -------------------------------------------------------------------------
+c    fpz27 : Ferroperm PZ27  www.ferroperm-piezo.com  equiv. Navy Type II , PZT5A
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxx = 1130.                   /* dielectric constant (constant strain)
+symb bepzz = 914.                   /* dielectric constant (constant strain)
+symb brho  = 7700.                    /* density
+symb bqdmp = 90.                      /* Mechanical Q at 1e6
+c
+c    define baseline stiffness coefficients
+c
+symb bc11 = 1.47e11                 /* stiffness constant  
+symb bc33 = 1.13e11                 /* stiffness constant
+symb bc44 = 2.30e10                 /* stiffness constant
+symb bc12 = 1.05e11                 /* stiffness constant
+symb bc13 = 0.937e11                 /* stiffness constant
+symb bc66 = 2.12e10 
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5 =  11.64                   /* coupling constant
+symb bez1 = -3.09                   /* coupling constant
+symb bez3 =  16.0                   /* coupling constant
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+c
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop fpz27 $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec fpz27 $epxx $epxx $epzz
+c
+     piez fpz27 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp fpz27 $freqdamp q  $qdmp  $qdmp 1000000. 1. 
+c
+     axis fpz27 posx   /* relate materials local system to global system
+c
+c
+c -------------------------------------------------------------------------
+c    fpz34 : Ferroperm PZ34  www.ferroperm-piezo.com  Lead Titanate
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxx = 224.                   /* dielectric constant (constant strain)
+symb bepzz = 172.                   /* dielectric constant (constant strain)
+symb brho  = 7550.                    /* density
+symb bqdmp = 700.                      /* Mechanical Q at 1e6
+c
+c    define baseline stiffness coefficients
+c
+symb bc11 = 1.45e11                 /* stiffness constant  
+symb bc33 = 1.39e11                 /* stiffness constant
+symb bc44 = 5.81e10                 /* stiffness constant
+symb bc12 = 0.328e11                 /* stiffness constant
+symb bc13 = 0.130e11                 /* stiffness constant
+symb bc66 = 5.59e10 
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5 =  2.52                    /* coupling constant
+symb bez1 = -0.35                    /* coupling constant
+symb bez3 =  6.5                    /* coupling constant
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+c
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop fpz34 $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec fpz34 $epxx $epxx $epzz
+c
+     piez fpz34 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp fpz34 $freqdamp q  $qdmp  $qdmp 1000000. 1. 
+c
+     axis fpz34 posx   /* relate materials local system to global system
+c
+c
+c -------------------------------------------------------------------------
+c    mpt : Modified Lead Titanate MPT, Generic
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxx = 263.                   /* dielectric constant (constant strain)
+symb bepzz = 210.                   /* dielectric constant (constant strain)
+symb brho  = 6900.                    /* density
+symb bqdmp = 30.                      /* Mechanical Q at 1e6
+c
+c    define baseline stiffness coefficients
+c
+symb bc11 = 1.492e11                 /* stiffness constant  
+symb bc33 = 1.276e11                 /* stiffness constant
+symb bc44 = 5.52e10                 /* stiffness constant
+symb bc12 = 0.368e11                 /* stiffness constant
+symb bc13 = 0.324e11                 /* stiffness constant
+ 
+symb bc66 = 5.65e10 
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5 =  5.25                    /* coupling constant
+symb bez1 = -0.953                    /* coupling constant
+symb bez3 =  10.24                    /* coupling constant
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+c
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop mpt $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec mpt $epxx $epxx $epzz
+c
+     piez mpt 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp mpt $freqdamp q  $qdmp  $qdmp 1000000. 1. 
+c
+     axis mpt posx   /* relate materials local system to global system
+c
+
+c
+c -------------------------------------------------------------------------
+c    leadmn : Lead MetaNiobate Generic
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxx = 265.                   /* dielectric constant (constant strain)
+symb bepzz = 265.                   /* dielectric constant (constant strain)
+symb brho  = 5900.                    /* density
+symb bqdmp = 15.                      /* Mechanical Q at 1e6
+c
+c    define baseline stiffness coefficients
+c
+symb bc11 = 0.84e11                 /* stiffness constant  
+symb bc33 = 1.094e11                 /* stiffness constant
+symb bc44 = 2.8e10                 /* stiffness constant
+symb bc12 = 0.383e11                 /* stiffness constant
+symb bc13 = 0.494e11                 /* stiffness constant
+symb bc66 = 2.5e10 
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5 =  2.53                   /* coupling constant
+symb bez1 = -3.04                   /* coupling constant
+symb bez3 =  8.36                   /* coupling constant
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+c
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop leadmn $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec leadmn $epxx $epxx $epzz
+c
+     piez leadmn 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp leadmn $freqdamp q  $qdmp  $qdmp 1000000. 1. 
+c
+     axis leadmn posx   /* relate materials local system to global system
+
+c
+c -------------------------------------------------------------------------
+c    pzt5h : PZT5H Generic
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxx = 1700.                   /* dielectric constant (constant strain)
+symb bepzz = 1470.                   /* dielectric constant (constant strain)
+symb brho  = 7500.                    /* density
+symb bqdmp = 65.                      /* Mechanical Q at 1e6
+c
+c    define baseline stiffness coefficients
+c
+symb bc11 = 1.272e11                 /* stiffness constant  
+symb bc33 = 1.174e11                 /* stiffness constant
+symb bc44 = 2.3e10                 /* stiffness constant
+symb bc12 = 0.802e11                 /* stiffness constant
+symb bc13 = 0.847e11                 /* stiffness constant
+ 
+symb bc66 = 2.35e10 
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5 =  17.0                   /* coupling constant
+symb bez1 = -6.5                   /* coupling constant
+symb bez3 =  23.3                   /* coupling constant
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+c
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop pzt5h $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec pzt5h $epxx $epxx $epzz
+c
+     piez pzt5h 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp pzt5h $freqdamp q  $qdmp  $qdmp 1000000. 1. 
+c
+     axis pzt5h posx   /* relate materials local system to global system
+c
+c -------------------------------------------------------------------------
+c    pzt5k: pzt5K from Morgan Electroceramics - guesstimated properties, very preliminary
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxx = 3458.                   /* dielectric constant (constant strain)
+symb bepzz = 3560.                   /* dielectric constant (constant strain)
+symb brho  = 8200.                    /* density
+symb bqdmp = 65.                      /* Mechanical Q at 1e6
+c
+c    define baseline stiffness coefficients
+c
+symb bc11 = 13.84e10                 /* stiffness constant  
+symb bc33 = 12.94e10                 /* stiffness constant
+symb bc12 = 9.15e10                  /* stiffness constant
+symb bc13 = 9.61e10                  /* stiffness constant
+symb bc66 = 2.45e10
+symb bc44 = 2.23e10                  /* stiffness constant
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bez1 = -1.45                     /* coupling constant
+symb bez3 =  41.4                     /* coupling constant
+symb bex5 =  23.3                     /* coupling constant
+
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+c
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop pzt5k $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec pzt5k $epxx $epxx $epzz
+c
+     piez pzt5k 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp pzt5k $freqdamp q  $qdmp  $qdmp 1000000. 1. 
+c
+     axis pzt5k posx   /* relate materials local system to global system
+c
+c
+c -------------------------------------------------------------------------
+c    pzt5a : PZT5A Generic
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxx = 916.                   /* dielectric constant (constant strain)
+symb bepzz = 830.                   /* dielectric constant (constant strain)
+symb brho  = 7750.                    /* density
+symb bqdmp = 75.                      /* Mechanical Q at 1e6
+c
+c    define baseline stiffness coefficients
+c
+symb bc11 = 1.203e11                 /* stiffness constant  
+symb bc33 = 1.109e11                 /* stiffness constant
+symb bc44 = 2.11e10                 /* stiffness constant
+symb bc12 = 0.752e11                 /* stiffness constant
+symb bc13 = 0.751e11                 /* stiffness constant
+ 
+symb bc66 = 2.26e10 
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5 =  12.3                   /* coupling constant
+symb bez1 = -5.4                   /* coupling constant
+symb bez3 =  15.8                   /* coupling constant
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+c
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop pzt5a $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec pzt5a $epxx $epxx $epzz
+c
+     piez pzt5a 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp pzt5a $freqdamp q  $qdmp  $qdmp 1000000. 1. 
+c
+     axis pzt5a posx   /* relate materials local system to global system
+c
+c -------------------------------------------------------------------------
+c    pzt4d : PZT4D Generic 
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxx = 540.                     /* dielectric constant (constant strain)
+symb bepzz = 475                     /* dielectric constant (constant strain)
+symb brho  = 7600.                    /* density
+symb bqdmp = 600.                     /* Mechanical Q at 1e6
+c
+c    define baseline stiffness coefficients
+c
+symb bc11 = 13.9e10                  /* stiffness constant  
+symb bc33 = 11.75e10                  /* stiffness constant
+symb bc44 = 3.1e10                   /* stiffness constant
+symb bc12 = 7.5e10                   /* stiffness constant
+symb bc13 = 7.5e10                   /* stiffness constant
+symb bc66 = .5 * ( $bc11 - $bc12 )
+c symb bc66 = 3.16e10
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5 = 11.9                      /* coupling constant
+symb bez1 = -3.55                     /* coupling constant
+symb bez3 = 14.9                      /* coupling constant
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+c
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop pzt4d $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec pzt4d $epxx $epxx $epzz
+c
+     piez pzt4d 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp pzt4d $freqdamp q  $qdmp  $qdmp 1000000. 1. 
+c
+     axis pzt4d posx   /* relate materials local system to global system
+
+c
+c -------------------------------------------------------------------------
+c    pzt4 : PZT4 Generic 
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxx = 730.                   /* dielectric constant (constant strain)
+symb bepzz = 635.                   /* dielectric constant (constant strain)
+symb brho  = 7500.                    /* density
+symb bqdmp = 500.                      /* Mechanical Q at 1e6
+c
+c    define baseline stiffness coefficients
+c
+symb bc11 = 1.47e11                 /* stiffness constant  
+symb bc33 = 1.32e11                 /* stiffness constant
+symb bc44 = 3.13e10                 /* stiffness constant
+symb bc12 = 0.811e11                 /* stiffness constant
+symb bc13 = 0.811e11                 /* stiffness constant
+symb bc66 = 3.06e10 
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5 =  11.4                   /* coupling constant
+symb bez1 = -3.0                    /* coupling constant
+symb bez3 =  16.7                   /* coupling constant
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+c
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop pzt4 $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec pzt4 $epxx $epxx $epzz
+c
+     piez pzt4 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp pzt4 $freqdamp q  $qdmp  $qdmp 1000000. 1. 
+c
+     axis pzt4 posx   /* relate materials local system to global system
+c
+c -------------------------------------------------------------------------
+c    pzt8 : PZT8 Generic
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxx = 900.                       /* dielectric constant (constant strain)
+symb bepzz = 600.                       /* dielectric constant (constant strain)
+symb brho  = 7600.                      /* density
+symb bqdmp = 1000.                      /* Mechanical Q at 1e6
+c
+c    define baseline stiffness coefficients
+c
+symb bc11 = 1.390e11                 /* stiffness constant  
+symb bc33 = 1.154e11                 /* stiffness constant
+symb bc44 = 2.65e10                  /* stiffness constant
+symb bc12 = 0.78e11                  /* stiffness constant
+symb bc13 = 0.743e11                 /* stiffness constant
+symb bc66 = .5 * ( $bc11 - $bc12 )  
+c symb bc66 = 3.06e10 
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5 =  12.7                    /* coupling constant
+symb bez1 = -5.2                     /* coupling constant
+symb bez3 =  15.08                   /* coupling constant
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+c
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop pzt8 $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec pzt8 $epxx $epxx $epzz
+c
+     piez pzt8 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp pzt8 $freqdamp q  $qdmp  $qdmp 1000000. 1. 
+c
+     axis pzt8 posx   /* relate materials local system to global system
+c
+c -------------------------------------------------------------------------
+c    pvdf : PVDF 110 micron Generic - from Hayward, Bennie, Banks and Galbraith
+c    IEEE UFFC Vol 47, No 6, Nov 2000, pp1438-1447
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxx = 6.28                       /* dielectric constant (constant strain)
+symb bepzz = 6.28                      /* dielectric constant (constant strain)
+symb brho  = 1780.                    /* density
+symb bqdmp = 20.                      /* Mechanical Q at 1e6
+c
+c    define baseline stiffness coefficients
+c
+symb bc11 = 0.494e10                 /* stiffness constant  
+symb bc33 = 0.960e10                 /* stiffness constant
+symb bc44 = 0.124e10                  /* stiffness constant
+symb bc12 = 0.246e10                  /* stiffness constant
+symb bc13 = 0.246e10                 /* stiffness constant
+ 
+symb bc66 = 0.124e10 
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5 =  0.207                    /* coupling constant
+symb bez1 =  0.216                     /* coupling constant
+symb bez3 =  0.339                   /* coupling constant
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+c
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop pvdf $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec pvdf $epxx $epxx $epzz
+c
+     piez pvdf 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp pvdf $freqdamp q  $qdmp  $qdmp 1000000. 1. 
+c
+     axis pvdf posx   /* relate materials local system to global system
+c
+c
+c -------------------------------------------------------------------------
+c    lno : Lithium Niobate Generic (from Univ. of Paisley) 
+c note changes to matrix entries and stress/strain numbers
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxh = 44.0                 /* lno dielectric constant at constant strain, x
+symb bepzh = 27.9                 /* lno dielectric constant at constant strain, z
+symb brho = 4640.
+symb bqdmp = 50
+c
+c    define baseline stiffness coefficients
+c
+symb c11h = 20.3e10             
+symb c12h = 5.73e10             
+symb c13h = 7.52e10            
+symb c14h = 0.85e10
+symb c22h = $c11h
+symb c23h = $c13h
+symb c24h = -$c14h
+symb c33h = 24.24e10            
+symb c44h = 5.95e10             
+symb c55h = $c44h
+symb c56h = $c14h
+symb c66h = 0.5 * ( $c11h - $c12h )  
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb e31h = 0.2299              
+symb e33h = 1.3266              
+symb e15h = 3.7838             
+symb e22h = 2.4407
+symb e16h = -$e22h
+c
+c
+c    scale  material coefficients for this run
+c
+symb epxh = $epvacm * $bepxh 
+symb epzh = $epvacm * $bepzh 
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop lno $rho
+     $c11h    $c12h    $c13h   $c14h 0.0   0.0  $c22h
+     $c23h    $c24h    0.0     0.0   $c33h 0.0  0.0
+     0.0      $c44h    0.0     0.0   $c55h $c56h $c66h
+c
+     elec lno strn $epxh $epxh $epzh
+c
+     piez lno 1 5 $e15h 1 6 $e16h 2 1 $e16h 2 2 $e22h 2 4 $e15h 3 1 $e31h 3 2 $e31h 3 3 $e33h
+c
+     rdmp lno $freqdamp q  $qdmp  $qdmp 5.e6 1. 
+c
+     axis lno posx   /* relate materials local system to global system
+c -------------------------------------------------------------------------
+c    liti : Lithium Titanate Generic 
+c note changes to matrix entries and stress/strain numbers
+c -------------------------------------------------------------------------
+c
+c    define baseline dielectric coefficients
+c
+symb bepxh = 41.0                 /* lno dielectric constant at constant strain, x
+symb bepzh = 43.0                 /* lno dielectric constant at constant strain, z
+symb brho = 7460.
+symb bqdmp = 50
+c
+c    define baseline stiffness coefficients
+c
+symb c11h = 23.0e10             
+symb c12h = 4.6e10             
+symb c13h = 8.4e10            
+symb c14h = -1.08e10
+symb c22h = $c11h
+symb c23h = $c13h
+symb c24h = -$c14h
+symb c33h = 27.5e10            
+symb c44h = 9.5e10             
+symb c55h = $c44h
+symb c56h = $c14h
+symb c66h = 0.5 * ( $c11h - $c12h )  
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb e31h = -.145              
+symb e33h = 1.85              
+symb e15h = 2.6             
+symb e22h = -$e33h
+symb e16h = -3.7
+c
+c
+c    scale  material coefficients for this run
+c
+symb epxh = $epvacm * $bepxh 
+symb epzh = $epvacm * $bepzh 
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop liti $rho
+     $c11h    $c12h    $c13h   $c14h 0.0   0.0  $c22h
+     $c23h    $c24h    0.0     0.0   $c33h 0.0  0.0
+     0.0      $c44h    0.0     0.0   $c55h $c56h $c66h
+c
+     elec liti strn $epxh $epxh $epzh
+c
+     piez liti 1 5 $e15h 1 6 $e16h 2 1 $e16h 2 2 $e22h 2 4 $e15h 3 1 $e31h 3 2 $e31h 3 3 $e33h
+c
+     rdmp liti $freqdamp q  $qdmp  $qdmp 1.e6 1. 
+c
+     axis liti posx   /* relate materials local system to global system
+
+c
+c -------------------------------------------------------------------------
+c    pznt45 : Single Crystal PZN-4.5% PT, Generic from PiezoResource, PSU
+c -------------------------------------------------------------------------
+c
+symb bepxx    =    3100.
+symb bepzz    =    5200.
+symb brho     =    8310.
+symb bqdmp    =    90.
+c
+c    define baseline stiffness coefficients
+c
+symb bc11     =   1.11e11
+symb bc33     =   1.05e11
+symb bc44     =   0.64e11
+symb bc12     =   1.02e11
+symb bc13     =   1.01e11
+symb bc66     =   0.63e11
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5     =    8.9
+symb bez1     =   -3.7
+symb bez3     =    15.0
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop pznt45 $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec pznt45 strs $epxx $epxx $epzz
+c
+     piez pznt45 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp pznt45 $freqdamp q  $qdmp  $qdmp 5.e6 1. 
+c
+     axis pznt45 posx   /* relate materials local system to global system
+c
+c -------------------------------------------------------------------------
+c    pznt80 : Single Crystal PZN-8% PT, Generic from PiezoResource, PSU
+c -------------------------------------------------------------------------
+c
+symb bepxx    =    3012.
+symb bepzz    =    5689.
+symb brho     =    8315.
+symb bqdmp    =    90.
+c
+c    define baseline stiffness coefficients
+c
+symb bc11     =   1.11e11
+symb bc33     =   1.02e11
+symb bc44     =   0.61e11
+symb bc12     =   1.02e11
+symb bc13     =   0.997e11
+symb bc66     =   0.656e11
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5     =    9.39
+symb bez1     =   -8.84
+symb bez3     =    11.8
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop pznt80 $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec pznt80 strs $epxx $epxx $epzz
+c
+     piez pznt80 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp pznt80 $freqdamp q  $qdmp  $qdmp 5.e6 1. 
+c
+     axis pznt80 posx   /* relate materials local system to global system
+c
+c -------------------------------------------------------------------------
+c    pznt33 : Single Crystal PZN-33% PT, Generic from PiezoResource, PSU
+c -------------------------------------------------------------------------
+c
+symb bepxx    =    1033.
+symb bepzz    =    8266.
+symb brho     =    8050.
+symb bqdmp    =    90.
+c
+c    define baseline stiffness coefficients
+c
+symb bc11     =   1.14e11
+symb bc33     =   1.29e11
+symb bc44     =   0.70e11
+symb bc12     =   1.02e11
+symb bc13     =   1.12e11
+symb bc66     =   0.65e11
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5     =    8.8
+symb bez1     =   -3.4
+symb bez3     =    19.6
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop pznt33 $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec pznt33 strs $epxx $epxx $epzz
+c
+     piez pznt33 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp pznt33 $freqdamp q  $qdmp  $qdmp 5.e6 1. 
+c
+     axis pznt33 posx   /* relate materials local system to global system
+c
+c -------------------------------------------------------------------------
+c    pmnpt : Single Crystal PMN-30% PT, from Zhang, Jiang, Jiang, and Cao
+c    'Elastic, Dielectric and Piezoelectric Coefficients of Domain Engineered
+c     0.70Pb(Mg1/3Nb2/3))3-0.30PbTiO3 Single Crystal' MRI, Penn State University
+c -------------------------------------------------------------------------
+c
+symb bepxx    =    3600.
+symb bepzz    =    7800.
+symb brho     =    8038.
+symb bqdmp    =    90.                /* estimate
+c
+c    define baseline stiffness coefficients
+c
+symb bc11     =   1.17e11
+symb bc33     =   1.08e11
+symb bc44     =   0.71e11
+symb bc12     =   1.03e11
+symb bc13     =   1.01e11
+symb bc66     =   0.66e11
+c
+c    define baseline piezoelectric coupling coefficients
+c
+symb bex5     =    13.6
+symb bez1     =   -2.4
+symb bez3     =    27.1
+c
+c    scale material properties as specified above
+c
+symb epxx = $epvacm * $bepxx * $epsscal
+symb epzz = $epvacm * $bepzz * $epsscal
+symb c11 = $bc11 * $stfscal
+symb c33 = $bc33 * $stfscal
+symb c44 = $bc44 * $stfscal
+symb c12 = $bc12 * $stfscal
+symb c13 = $bc13 * $stfscal
+symb c66 = $bc66 * $stfscal
+c
+symb ex5 = $bex5 * $pizscal
+symb ez1 = $bez1 * $pizscal
+symb ez3 = $bez3 * $pizscal
+c
+symb rho = $brho
+symb qdmp = $bqdmp
+c
+     type lean
+c
+     prop pmnpt $rho 
+     $c11     $c12     $c13     0.0     0.0     0.0   $c11
+     $c13     0.0      0.0      0.0     $c33    0.0   0.0
+     0.0      $c44     0.0      0.0     $c44    0.0   $c66
+c
+     elec pmnpt strs $epxx $epxx $epzz
+c
+     piez pmnpt 1 5 $ex5 2 4 $ex5 3 1 $ez1 3 2 $ez1 3 3 $ez3
+c
+     rdmp pmnpt $freqdamp q  $qdmp  $qdmp 5.e6 1. 
+c
+     axis pmnpt posx   /* relate materials local system to global system
+
+
+
+c
+c Solid materials such as steel, and fluids, linear isotropic follow
+c
+c 'type elas' and 'wvsp on' issued for each material to ensure accurate material response
+c when sections are cut and pasted from this file to other input files.
+c
+c
+     wvsp on
+c
+c -------------------------------------------------------------------------
+c    hard : Vantico HY1300/CY1301 www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop hard 1149. 2536. 1179.
+     vdmp hard $freqdamp db 287. 738. 1.e6  1.  1.
+     symb eps = $epvacm * 4.0
+     elec hard $eps
+c
+c -------------------------------------------------------------------------
+c    hardalm1 : Vantico HY1300/CY1301 + 70% by wgt Alumina www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop hardalm1 2308. 2999. 1686.
+     vdmp hardalm1 $freqdamp db 321. 556. 1.e6  1.  1.
+c
+c -------------------------------------------------------------------------
+c    hardalm2 : Vantico HY1300/CY1301 + 50% fused Alumina www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop hardalm2 1767. 2626. 1355.
+     vdmp hardalm2 $freqdamp db 339. 764. 1.e6  1.  1.
+c
+c -------------------------------------------------------------------------
+c    medm : Vantico HY956EN/CY221 www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop medm 1134. 2452. 1110.
+     vdmp medm $freqdamp db 895. 4108. 1.e6  1.  1.
+     symb eps = $epvacm * 4.0
+     elec medm $eps
+c
+c -------------------------------------------------------------------------
+c    soft : Vantico HY956/CY208 www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop soft 1165. 1989. 762.
+     vdmp soft $freqdamp db 1633. 11526. 1.e6  1.  1.
+     symb eps = $epvacm * 4.0
+     elec soft $eps
+c
+c -------------------------------------------------------------------------
+c    arald1 : Araldite MY750/HY956EN www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop arald1 1146. 2658. 1237.
+     vdmp arald1 $freqdamp db 400. 1259. 1.e6  1.  1.
+c
+c -------------------------------------------------------------------------
+c    arald2 : Araldite MY750/HY906 + DY062 for high Tg  www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop arald2 1150. 2365. 1110.
+     vdmp arald2 $freqdamp db 252. 756. 1.e6  1.  1.
+c
+c -------------------------------------------------------------------------
+c    arald3 : Araldite MY750/HY906 + DY062 + AlN (62% by wgt )www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop arald3 1673. 2633. 1343.
+     vdmp arald3 $freqdamp db 321. 799. 1.e6  1.  1.
+c
+c -------------------------------------------------------------------------
+c    arald4 : Araldite MY750/HY906 + DY062 + AlO (73% by wgt )www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop arald4 2007. 2753. 1456.
+     vdmp arald4 $freqdamp db 304. 669. 1.e6  1.  1.
+c
+c -------------------------------------------------------------------------
+c    stycst1 : Stycast W67  www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop stycst1 2007. 2350. 1139.9
+     vdmp stycst1 $freqdamp db 269. 599. 1.e6  1.  1.
+c
+c -------------------------------------------------------------------------
+c    stycst2 : Stycast 1269A  www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop stycst2 1190. 2416. 1132.
+     vdmp stycst2 $freqdamp db 252. 903. 1.e6  1.  1.
+c
+c -------------------------------------------------------------------------
+c    polymed : Polymed HP20/65  www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop polymed 1122. 1605. 549.
+     vdmp polymed $freqdamp db 565. 10281. 1.e6  1.  1.   /* shear recorded as 21281 - too high
+c
+c -------------------------------------------------------------------------
+c    rtv : RTV 664 Silicone rubber   www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop rtv 1294. 1022. 125.
+     vdmp rtv $freqdamp db 408. 1737. 1.e6  1.  1.  
+c
+c -------------------------------------------------------------------------
+c    sili : Ward Bekker Silicone rubber   www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop sili 996. 987. 167.
+     vdmp sili $freqdamp db 17. 1909. 1.e6  1.  1.    /* shear recorded as 3909 - too high
+c
+c -------------------------------------------------------------------------
+c    aqual : Aqualene   www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop aqual 921.5  1593. 659.
+     vdmp aqual $freqdamp db 261. 2685. 1.e6  1.  1.    /* shear recorded as 9685 - too high
+c
+c -------------------------------------------------------------------------
+c    devc : Devcon liquid steel   www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop devc 1817.  1836. 973.
+     vdmp devc $freqdamp db 738. 1598. 1.e6  1.  1.
+c
+c -------------------------------------------------------------------------
+c    alum : Aluminium (damping v. low) www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop alum 2690.  6306. 3114.
+     thex alum 24.e-6
+     thrm alum 893. 163
+c
+c -------------------------------------------------------------------------
+c    kapton : Kapton , polyimide from DuPont   Kino
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop kapton 1420. 2420. 1191.   
+     vdmp kapton $freqdamp db 1.  3.  1000000. 1. 0.01     /* estimate
+     thex kapton  16.0e-6
+     symb eps = $epvacm * 3.1
+     elec kapton $eps
+c
+c -------------------------------------------------------------------------
+c    brass : Brass  www.cue.ac.uk
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop brass 8292.  4321. 2103.
+     vdmp brass $freqdamp db 148. 851. 2.25e6  1.  1.
+     thex brass 18.7e-6
+c     thrm brass ?. 140.
+c
+c -------------------------------------------------------------------------
+c    watr : Water at 25C   Duck
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop watr 1000.   1496.  0.  
+     vdmp watr $freqdamp db 0.002 0. 1.0e6  2. 0.01
+     symb eps = $epvacm * 3.0
+     elec watr $eps
+     thex watr 4.e-4
+     thrm watr 2060. 0.61
+c
+c -------------------------------------------------------------------------
+c    rxlt : Rexolite Generic NIH Transducer Resource Paper, Wang, Ritter, Cao, Shung
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop rxlt 1060. 2340. 1100.         
+     vdmp rxlt $freqdamp db 11.0  33.  30.e6 1. 0.01
+c
+c -------------------------------------------------------------------------
+c    grph5qc : Graphite - Poco - 9AXF-5QC
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop grph5qc 3070. 3356. 1821.          
+     vdmp grph5qc $freqdamp db 1.98 6.  1000000. 1. 0.01
+     thex grph5qc 2.e-6
+     thrm grph5qc 690. 24.
+c
+c -------------------------------------------------------------------------
+c    grph5q : Graphite - Poco AXF-5Q
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop grph5q 1780. 3090. 1400. 
+     vdmp grph5q $freqdamp db 1.5 4.5  1000000. 1. 0.01
+     thex grph5q 7.9e-6
+     thrm grph5q 690. 24.
+c
+c -------------------------------------------------------------------------
+c    grphdfp1 : Graphite - Poco DFP-1
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop grphdfp1 1810. 3088. 1732. 
+     vdmp grphdfp1 $freqdamp db 0.27 1.01  1000000. 1. 0.01
+     thex grphdfp1 8.1e-6
+     thrm grphdfp1 720. 95.
+c
+c -------------------------------------------------------------------------
+c    ranc : Ranco backing Generic
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop ranc 1552. 1856. 587.          
+     vdmp ranc $freqdamp q   10  5.  1000000. 1.
+c
+c -------------------------------------------------------------------------
+c    ke16 : kerf filler generic
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop ke16 1243. 1114. 223.           
+     vdmp ke16 $freqdamp q   25. 2.  1000000. 1.
+c
+c -------------------------------------------------------------------------
+c    alumina : npn-piezoelectric ceramic, generic
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop alumina 3920. 10381. 6219.    
+     vdmp alumina $freqdamp db 1. 3.  1000000. 1. 0.01
+     symb eps = $epvacm * 9.8
+     elec alumina $eps
+     thex alumina  7.4e-6
+     thrm alumina  850.    30.
+c
+c -------------------------------------------------------------------------
+c    lens : lens material, generic 
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop lens 1300. 1000. 0.
+     vdmp lens $freqdamp db 400. 0. 1.e6  1.  1.
+c
+c -------------------------------------------------------------------------
+c    Copper : copper, generic   Kino
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop copper 8930. 5010. 2270.   
+     vdmp copper $freqdamp db .4  1.2  1000000. 1. 0.01
+     thex copper  16.4e-6
+     thrm copper  385. 385
+c
+c -------------------------------------------------------------------------
+c    glassc : Glass , crown   Kino
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop glassc 2240. 5100. 2800.   
+     vdmp glassc $freqdamp db .3  1.0  1000000. 1. 0.01
+     thex glassc  9.0e-6
+     thrm glassc  840.    1.4
+     symb eps = $epvacm * 3.0
+     elec glassc $eps 
+c
+c -------------------------------------------------------------------------
+c    glassp : Glass , Pyrex   Kino
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop glassp 2240. 5640. 3280.   
+     vdmp glassp $freqdamp db .25  0.8  1000000. 1. 0.01
+     thex glassp  9.0e-6
+     thrm glassp  840.    1.4
+     symb eps = $epvacm * 3.0
+     elec glassp $eps 
+c
+c -------------------------------------------------------------------------
+c    gold : Gold , generic   Kino
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop gold 19700. 3240. 1200.   
+     vdmp gold $freqdamp db .4  1.2  1000000. 1. 0.01
+     thex gold  14.4e-6
+     thrm gold  132. 301.0
+c
+c -------------------------------------------------------------------------
+c    iron : Iron , generic   Kino
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop iron 7690. 5900. 3200.   
+     vdmp iron $freqdamp db .3  0.9  1000000. 1. 0.01
+     thex iron  12.2e-6
+     thrm iron  440. 76.2
+c
+c -------------------------------------------------------------------------
+c    lead : Lead , generic   
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop lead 11200. 2200. 700.
+     thex lead  29.1e-6
+     thrm lead  129. 33.0   
+c
+c -------------------------------------------------------------------------
+c    magn : Magnesium , generic   Kino (density and Zs reversed in book)
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop magn 1740. 5770. 3050.   
+     vdmp magn $freqdamp db .3  0.9  1000000. 1. 0.01
+     thex magn  26.1e-6
+     thrm magn  1025. 159.0
+c
+c -------------------------------------------------------------------------
+c    nickel : Nickel , generic   Kino 
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop nickel 8840. 5600. 3000.   
+     vdmp nickel $freqdamp db .3  0.9  1000000. 1. 0.01
+     thex nickel  13.1e-6
+     thrm nickel  460. 60.7
+c
+c -------------------------------------------------------------------------
+c    plat : Platinum , generic   Kino 
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop plat 21400. 3260. 1730.   
+     vdmp plat $freqdamp db .3  0.9  1000000. 1. 0.01
+     thex plat  9.1e-6
+     thrm plat  134. 69.1
+c
+c -------------------------------------------------------------------------
+c    polythen : Polythene , generic   Kino 
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop polythen 920. 1950. 540.   
+     vdmp polythen $freqdamp db .5  1.5  1000000. 1. 0.01
+     symb eps = $epvacm * 2.4
+     elec polythen $eps
+     thex polythen  27.0e-6
+     thrm polythen  2200. 0.35
+c
+c -------------------------------------------------------------------------
+c    polysty : Polystytrene , generic   Kino 
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop polysty  1050.  2400.  1150.   
+     vdmp polysty  $freqdamp db .35  1.3  1000000. 1. 0.01
+     symb eps = $epvacm * 2.4
+     elec polysty $eps
+     thex polysty  80.0e-6
+     thrm polysty  1700. 0.15
+c
+c -------------------------------------------------------------------------
+c    sin : Silicon Nitride , generic   Kino 
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop sin  3270.  11000.  6250.   
+     vdmp sin  $freqdamp db .26  0.9  1000000. 1. 0.01
+     symb eps = $epvacm * 7.5
+     elec sin $eps
+     thex sin  2.8e-6
+c
+c -------------------------------------------------------------------------
+c    sapph : Sapphire , generic   Kino 
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop sapph  3990.  11100.  6040.   
+     vdmp sapph  $freqdamp db .1  0.4  1000000. 1. 0.01
+     symb eps = $epvacm * 9.3
+     elec sapph $eps
+     thex sapph  4.0e-6
+     thrm sapph  761. 24
+c
+c -------------------------------------------------------------------------
+c    sio2 : Silicon Dioxide, Quartz , generic   Kinsler/Fry 
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop sio2  2650.  5750.  2200.  
+     thex sio2  8.1e-6 
+c
+c -------------------------------------------------------------------------
+c    si : Silicon , generic   Anisotropic, use 'type lean' if important 
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop si  2330.  7526.  4346.   
+     vdmp si  $freqdamp db .1  0.3  1.e6 1. 0.01 /* shear recorded as .4 - too high
+     symb eps = $epvacm * 11.9
+     elec si $eps
+     thex si  2.5e-6
+     thrm si  702. 124
+c
+c -------------------------------------------------------------------------
+c    silver : Silver , generic   Kino
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop silver  10600.  3600.  1600.   
+     vdmp silver  $freqdamp db .4  1.4  1000000. 1. 0.01
+     thex silver  19.6e-6
+     thrm silver  234. 419
+c
+c -------------------------------------------------------------------------
+c    steel : Steel,mild , generic   Kino
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop steel  7900.  5900.  3200.   
+     vdmp steel  $freqdamp db .3  1.2  1000000. 1. 0.01
+     thex steel  11.7e-6
+     thrm steel  472. 49.8
+c
+c -------------------------------------------------------------------------
+c    stst : Steel, stainless , generic  
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop stst  7890.  5790.  3100.   
+     vdmp stst  $freqdamp db .3  1.2  1000000. 1. 0.01
+c
+c -------------------------------------------------------------------------
+c    tin : tin , generic   Kino
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop tin  7300.  3300.  1700.   
+     vdmp tin  $freqdamp db .3  1.2  1000000. 1. 0.01
+c
+c -------------------------------------------------------------------------
+c    titan : titanium , generic   Kino
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop titan  4480.  6100.  3100.   
+     vdmp titan  $freqdamp db .3  1.2  1000000. 1. 0.01
+     thex titan  8.9e-6
+     thrm titan  528. 17.0
+c
+c -------------------------------------------------------------------------
+c    tung : tungsten , generic   Kino
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop tung  19400.  5200.  2900.   
+     vdmp tung  $freqdamp db .27  0.8  1000000. 1. 0.01
+     thex tung  4.4e-6
+     thrm tung  134. 163.3
+c
+c -------------------------------------------------------------------------
+c    zinc : Zinc , generic   Kino
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop zinc  7000.  4200.  2400.   
+     vdmp zinc  $freqdamp db .26  0.75  1000000. 1. 0.01
+     thex zinc  31.2e-6
+     thrm zinc  390. 112.2
+c
+c -------------------------------------------------------------------------
+c    zno : Zinc Oxide , generic   OndaCorp www.ondacorp.com
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop zno  5680.  6400.  2950.   
+     vdmp zno  $freqdamp db .26  0.75  1000000. 1. 0.01
+     thex zno  2.9e-6
+     thrm zno  494. 23.4
+c
+c -------------------------------------------------------------------------
+c    nylon : Nylon , generic   OndaCorp www.ondacorp.com
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop nylon  1120.  2600.  1100.   
+     vdmp nylon  $freqdamp db .26  0.75  1000000. 1. 0.01
+     symb eps = $epvacm * 4.0
+     elec nylon $eps
+     thex nylon  100.e-6
+     thrm nylon  2000. 0.28
+c
+c -------------------------------------------------------------------------
+c    fluof104 : Fluorinert FC104 3M OndaCorp www.ondacorp.com
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop fluof104  1760.  575.  0.   
+c
+c -------------------------------------------------------------------------
+c    fluofc70 : Fluorinert FC70 3M OndaCorp www.ondacorp.com
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop fluofc70  1940.  687.  0.   
+c
+c -------------------------------------------------------------------------
+c    fluofc72 : Fluorinert FC72 3M OndaCorp www.ondacorp.com
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop fluofc72  1760.  512.  0.   
+c
+c -------------------------------------------------------------------------
+c    castor : Castor oil OndaCorp www.ondacorp.com
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop castor  969.  1477.  0.   
+c
+c -------------------------------------------------------------------------
+c    sioil : Oil, silicon Dow 200 1 centistoke OndaCorp www.ondacorp.com
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop sioil  818.  960.  0.   
+c
+c -------------------------------------------------------------------------
+c    vacm : Vacuum, also use Void (always defined mechanically)
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop vacm  0.  0.  0.   
+     elec vacm $epvacm 
+c
+     elec void $epvacm 
+c
+c -------------------------------------------------------------------------
+c    air : Air, room temp
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop air  1.24  343.  0.   
+     elec air $epvacm
+     symb eps = $epvacm * 1.0
+     elec air $eps 
+     thrm air 1005. 0.026
+c
+c -------------------------------------------------------------------------
+c    back5 : Backing, tungsten loaded epoxy, 5%vf  4.6  MRayl
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop back5  2063.  2250.  1200.   
+     vdmp back5  $freqdamp db 380.  1140.  30.e6 1. 0.01
+c
+c -------------------------------------------------------------------------
+c    back10 : Backing, tungsten loaded epoxy, 10%vf   5.8 Mrayl
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop back10  2975.  1960.  1047.   
+     vdmp back10  $freqdamp db 420.  1260.  30.e6 1. 0.01
+c
+c -------------------------------------------------------------------------
+c    back15 : Backing, tungsten loaded epoxy, 15%vf  7.1 MRayl
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop back15  3888.  1830.  978.   
+     vdmp back15  $freqdamp db 370.  1110.  30.e6 1. 0.01
+c
+c -------------------------------------------------------------------------
+c    back20 : Backing, tungsten loaded epoxy, 20%vf   8.6 MRayl
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop back20  4800.  1800.  962.   
+     vdmp back20  $freqdamp db 310.  930.  30.e6 1. 0.01
+c
+c -------------------------------------------------------------------------
+c    back25 : Backing, tungsten loaded epoxy, 25%vf  10 MRayl
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop back25  5710.  1750.  935.   
+     vdmp back25  $freqdamp db 290.  870.  30.e6 1. 0.01
+c
+c -------------------------------------------------------------------------
+c    pdms : PDMS
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop pdms 1050. 1030. 200.    
+     vdmp pdms $freqdamp db  148.  5212.  2.25e6 1.38 1.
+     thex pdms 3.1e-4
+     thrm pdms 1260. 0.15
+c
+c -------------------------------------------------------------------------
+c    pdmsb : PDMS black
+c -------------------------------------------------------------------------
+c
+     type elas
+     wvsp on
+     prop pdmsb 1050. 1200. 200.    
+     vdmp pdmsb $freqdamp db  148.  5212.  2.25e6 1.38 1.
+     thex pdmsb 1.55e-4
+     thrm pdmsb 1260. 0.15
+c
+c -------------------------------------------------------------------------
+c    pgft : Pigfat
+c -------------------------------------------------------------------------
+c  
+     type elas
+     wvsp on
+     prop pgft 900. 1426. 0.
+     vdmp pgft $freqdamp db 1.5 0. 1.0e6 1.0 0.01
+     thrm pgft 2600. 0.16
+c
+c -------------------------------------------------------------------------
+c    zirc705 : Zirconium (zircodyn 705)
+c -------------------------------------------------------------------------
+c  
+     type elas
+     wvsp on
+     prop zirc705 6640. 4600. 2320.
+     thex zirc705 3.6e-6
+     thrm zirc705 285. 17.1
+c
+c -------------------------------------------------------------------------
+c    zirc702 : Zirconium (zircodyn 702)
+c -------------------------------------------------------------------------
+c  
+     type elas
+     wvsp on
+     prop zirc702 6510. 4950. 2375. 
+     thex zirc702 5.8e-6
+     thrm zirc702 285. 22.
+c
+c -------------------------------------------------------------------------
+c    bone : generic 
+c -------------------------------------------------------------------------
+c  
+     type elas
+     wvsp on
+     prop bone 3900. 1880. 1040.  
+     thrm bone 1300. 0.5
+c
+c -------------------------------------------------------------------------
+c    terf : terfenol - magnetostrictive
+c -------------------------------------------------------------------------
+c    
+     type elas
+     wvsp on
+     prop terf 9250. 3240. 1725. 
+     symb d = 6.53e-9
+     mgst terf d 1 1 $d  2 2 $d  3 3 $d  
+     rdmp terf  $freqdamp q  65.  50. 1000000. 1.      /* shear q recorded as 30 - too low
+     symb rmut = 4.3 * $rmu0    /* mu-t
+     perm terf strs $rmut 
+c
+c -------------------------------------------------------------------------
+c    pmn : pmn - electrostrictive 
+c -------------------------------------------------------------------------
+c    
+     type elas
+     wvsp on
+     prop pmn  7500. 4378. 2205.
+     symb xkappa = 1.16e-6
+     symb psat = 0.259
+     symb q111 = 0.133e-1
+     symb q122 = -.606e-2
+     elst pmn $psat $xkappa $epvacm $q111 $q122
+     axis pmn posx
+c
+c -------------------------------------------------------------------------
+c    fibr : fiberglass isotropic
+c -------------------------------------------------------------------------
+c    
+     type elas
+     symb prsh = 0.3
+     symb ymsh = 21.e9
+     symb sdens = 1880.
+     symb sbulk = $ymsh / ( 3. * ( 1 - ( 2. * $prsh ) ) )
+     symb ssher = $ymsh / ( 2. * ( 1 + $prsh ) )
+     symb vl1 = ( ( $sbulk + ( 4. * $ssher / 3. ) ) / $sdens ) ** 0.5
+     symb vs1 = ( $ssher / $sdens ) ** 0.5
+     wvsp on
+     prop fibr  $sdens $vl1 $vs1 
+c
+c -------------------------------------------------------------------------
+c    fibrani : fiberglass anisotropic
+c -------------------------------------------------------------------------
+c    
+     type leti
+     wvsp off
+     symb sdens = 1880.
+     symb sbulk = 17.5e9
+     symb ssher = 8.07e9
+     prop fibrani $sdens $sbulk $ssher 0.01 0.0 * 
+          21.e9 8.98e9 0.275 0.355 3.52e9 0 0
+          1
+     wvsp on
+     type cap
+c
+c -------------------------------------------------------------------------
+c    watrnl : water - nonlinear for Type TISU
+c    pmax values used to prevent time step issues - set to appropriate value
+c    for individual application
+c -------------------------------------------------------------------------
+c    
+     type tisu
+     wvsp on
+     symb pmax = 2.e6
+     symb pmaxn = -2.e6
+     prop watrnl 1000. 1500. 0. 0.01 0.0 0.0 
+     5.0 $pmaxn $pmax
+     sdmp watrnl $freqdamp db 0.002 0. 1.0e6  2. 0.01
+c
+c -------------------------------------------------------------------------
+c    tofunl : Tofu, tissue mimick - nonlinear for Type TISU
+c    pmax values used to prevent time step issues - set to appropriate value
+c    for individual application
+c -------------------------------------------------------------------------
+c    
+     type tisu
+     wvsp on
+     symb pmax = 2.e6
+     symb pmaxn = -2.e6
+     prop tofunl 1059. 1520. 0. 0.01 0.0 0.0 
+     6.0 $pmaxn $pmax
+     sdmp tofunl $freqdamp db 0.75 0. 1.e6 0.75 0.01
+c
+c -------------------------------------------------------------------------
+c    fatnl : fat - nonlinear for Type TISU
+c    pmax values used to prevent time step issues - set to appropriate value
+c    for individual application
+c -------------------------------------------------------------------------
+c    
+     type tisu
+     wvsp on
+     symb pmax = 2.e6
+     symb pmaxn = -2.e6
+     prop fatnl 928. 1427. 0. 0.01 0.0 0.0 
+     10.0 $pmaxn $pmax
+     sdmp fatnl $freqdamp db 0.75 0. 1.e6 1.0 0.01
+c
+c -------------------------------------------------------------------------
+c    connnl : connective tissue - nonlinear for Type TISU
+c    pmax values used to prevent time step issues - set to appropriate value
+c    for individual application
+c -------------------------------------------------------------------------
+c    
+     type tisu
+     wvsp on
+     symb pmax = 2.e6
+     symb pmaxn = -2.e6
+     prop connnl 1100. 1537. 0. 0.01 0.0 0.0 
+     7.87 $pmaxn $pmax
+     sdmp connnl $freqdamp db 1.125 0. 1.e6 1.0 0.01
+c
+c -------------------------------------------------------------------------
+c    musclenl : Muscle - nonlinear for Type TISU
+c    pmax values used to prevent time step issues - set to appropriate value
+c    for individual application
+c -------------------------------------------------------------------------
+c    
+     type tisu
+     wvsp on
+     symb pmax = 2.e6
+     symb pmaxn = -2.e6
+     prop musclenl 1041. 1571. 0. 0.01 0.0 0.0 
+     7.5 $pmaxn $pmax
+     sdmp musclenl $freqdamp db 0.55 0. 1.e6 1.0 0.01
+c
+c -------------------------------------------------------------------------
+c    livernl : Liver - nonlinear for Type TISU
+c    pmax values used to prevent time step issues - set to appropriate value
+c    for individual application
+c -------------------------------------------------------------------------
+c    
+     type tisu
+     wvsp on
+     symb pmax = 2.e6
+     symb pmaxn = -2.e6
+     prop livernl 1050. 1577. 0. 0.01 0.0 0.0 
+     6.75 $pmaxn $pmax
+     sdmp livernl $freqdamp db 0.4 0. 1.e6 1.0 0.01
+c
+c Preliminary data
+c
+c
+c Air at 60 bar
+c
+     type elas
+     wvsp on
+     prop airp 75.00  375.  0.  0.
+c
+c Urethane
+c
+     type elas
+     wvsp on
+     prop uret 1020. 1560. 500.    
+     vdmp uret $freqdamp db 25. 75.  1000000. 1. 0.01
+     end
